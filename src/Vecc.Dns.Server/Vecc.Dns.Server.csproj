@@ -1,5 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <!-- NuGet Package Properties -->
+    <PropertyGroup>
+        <PackageId>Vecc.Dns.Server</PackageId>
+        <Authors>Edward Cooke</Authors>
+        <Title>Basic DNS server</Title>
+        <Description>This package has a basic DNS server</Description>
+        <Copyright>Edward Cooke</Copyright>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageReadmeFile>/README.md</PackageReadmeFile>
+        <Tags>DNS</Tags>
+        <RepositoryUrl>https://github.com/EdwardCooke/Vecc.Dns</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryBranch>master</RepositoryBranch>
+    </PropertyGroup>
+
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -8,5 +24,10 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Vecc.Dns\Vecc.Dns.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="../../README.md" Pack="true" PackagePath="\" />
+        <None Include="../../LICENSE" Pack="true" PackagePath="\" />
     </ItemGroup>
 </Project>
