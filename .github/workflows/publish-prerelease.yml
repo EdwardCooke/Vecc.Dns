@@ -1,0 +1,55 @@
+name: Push release package
+
+on:
+  push:
+    tags:
+    - "v[0-9]+.[0-9]+.[0-9]+-preview.*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      VSTEST_CONNECTION_TIMEOUT: 180
+      DOTNET_NOLOGO: "true"
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set VERSION variable from tag
+      run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+    - name: Install dotnet 7.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+    - name: Build
+      run: dotnet build --configuration Release /p:Version=${VERSION}
+    - name: Test
+      run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
+    - name: Pack
+      run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
+    - name: Az CLI login
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Get nuget key
+      id: nugetapikey
+      run: |
+        value=$(az keyvault secret show --name NUGET-API-KEY --vault-name kvveccgithub --query value --output tsv)
+        echo "::add-mask::$value"
+        echo "Nnugetapikey=$value" >> $GITHUB_OUTPUT
+
+    - name: Push
+      run: dotnet nuget push *.nupkg --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json
+      env:
+        NUGET_API_KEY: ${{ steps.nugetapikey.outputs.nugetapikey }}
+
+    - name: Create a Release
+      uses: elgohr/Github-Release-Action@v4
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        title: ${{ env.VERSION }}
+          
