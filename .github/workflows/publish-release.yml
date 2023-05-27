@@ -4,9 +4,6 @@ on:
   push:
     tags:
     - "v[0-9]+.[0-9]+.[0-9]+"
-jobs:
-  build:
-    steps:
 
 jobs:
   build:
@@ -34,10 +31,19 @@ jobs:
       run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
     - name: Pack
       run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
-    # - name: Push
-    #   run: dotnet nuget push *.nupkg --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json
-    #   env:
-    #     NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+    - name: Get nuget key
+      id: nugetapikey
+      run: |
+        value=$(az keyvault secret show --name NUGET-API-KEY --vault-name kvveccgithub --query value --output tsv)
+        echo "::add-mask::$value"
+        echo "Nnugetapikey=$value" >> $GITHUB_OUTPUT
+
+    - name: Push
+      run: dotnet nuget push *.nupkg --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json
+      env:
+        NUGET_API_KEY: ${{ steps.nugetapikey.outputs.nugetapikey }}
+
     - name: Create a Release
       uses: elgohr/Github-Release-Action@v4
       env:
