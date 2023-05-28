@@ -8,7 +8,7 @@
         <Description>This package has a basic DNS server</Description>
         <Copyright>Edward Cooke</Copyright>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <PackageLicenseFile>/LICENSE</PackageLicenseFile>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>/README.md</PackageReadmeFile>
         <Tags>DNS</Tags>
         <RepositoryUrl>https://github.com/EdwardCooke/Vecc.Dns</RepositoryUrl>
