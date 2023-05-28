@@ -1,4 +1,4 @@
-name: Push release package
+name: Push pre-release package
 
 on:
   push:
@@ -7,9 +7,7 @@ on:
 
 jobs:
   build:
-    permissions:
-      contents: 'read'
-      id-token: 'write'
+    permissions: write-all
     runs-on: ubuntu-latest
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
