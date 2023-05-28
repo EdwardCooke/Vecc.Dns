@@ -18,19 +18,25 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
     - name: Set VERSION variable from tag
+      id: version
       run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+
     - name: Install dotnet 7.0
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x
+
     - name: Build
       run: dotnet build --configuration Release /p:Version=${VERSION}
+
     - name: Test
       run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
+      
     - name: Pack
       run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
-      
+
     - name: Az CLI login
       uses: azure/login@v1
       with:
@@ -53,5 +59,5 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        title: ${{ env.VERSION }}
+        title: ${{ steps.version.outputs.VERSION }}
           
