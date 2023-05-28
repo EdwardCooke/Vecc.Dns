@@ -7,8 +7,7 @@ on:
 
 jobs:
   build:
-    permissions:
-      id-token: 'write'
+    permissions: write-all
     runs-on: ubuntu-latest
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
