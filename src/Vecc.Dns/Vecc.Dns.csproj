@@ -8,7 +8,7 @@
         <Description>This package has many different DNS record types and allow parsing an individual raw DNS packet into standard .net POCO objects for easy handling.</Description>
         <Copyright>Edward Cooke</Copyright>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageLicenseFile>/LICENSE</PackageLicenseFile>
         <PackageReadmeFile>/README.md</PackageReadmeFile>
         <Tags>DNS</Tags>
         <RepositoryUrl>https://github.com/EdwardCooke/Vecc.Dns</RepositoryUrl>
