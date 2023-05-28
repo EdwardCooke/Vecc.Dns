@@ -26,7 +26,9 @@ jobs:
 
     - name: Set VERSION variable from tag
       id: version
-      run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+      run: |
+        echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+        echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_OUTPUT
 
     # - name: Install dotnet 7.0
     #   uses: actions/setup-dotnet@v3
@@ -64,5 +66,5 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        title: ${{ env.VERSION }}
+        title: ${{ steps.version.outputs.VERSION }}
           
