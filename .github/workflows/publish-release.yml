@@ -17,10 +17,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    # - name: Verify commit exists in origin/main
-    #   run: |
-    #     git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
-    #     git branch --remote --contains | grep origin/main
+    - name: Verify commit exists in origin/main
+      run: |
+        git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+        git branch --remote --contains | grep origin/main
 
     - name: Set VERSION variable from tag
       id: version
@@ -28,39 +28,38 @@ jobs:
         echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
         echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_OUTPUT
 
-    # - name: Install dotnet 7.0
-    #   uses: actions/setup-dotnet@v3
-    #   with:
-    #     dotnet-version: 7.0.x
+    - name: Install dotnet 7.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
 
-    # - name: Build
-    #   run: dotnet build --configuration Release /p:Version=${VERSION}
+    - name: Build
+      run: dotnet build --configuration Release /p:Version=${VERSION}
 
-    # - name: Test
-    #   run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
+    - name: Test
+      run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
 
-    # - name: Pack
-    #   run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
+    - name: Pack
+      run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
 
-    # - name: Az CLI login
-    #   uses: azure/login@v1
-    #   with:
-    #     creds: ${{secrets.AZURE_CREDENTIALS}}
+    - name: Az CLI login
+      uses: azure/login@v1
+      with:
+        creds: ${{secrets.AZURE_CREDENTIALS}}
 
-    # - name: Get nuget key
-    #   id: nugetapikey
-    #   run: |
-    #     value=$(az keyvault secret show --name NUGET-API-KEY --vault-name kvveccgithub --query value --output tsv)
-    #     echo "::add-mask::$value"
-    #     echo "nugetapikey=$value" >> $GITHUB_OUTPUT
+    - name: Get nuget key
+      id: nugetapikey
+      run: |
+        value=$(az keyvault secret show --name NUGET-API-KEY --vault-name kvveccgithub --query value --output tsv)
+        echo "::add-mask::$value"
+        echo "nugetapikey=$value" >> $GITHUB_OUTPUT
 
-    # - name: Push
-    #   run: dotnet nuget push *.nupkg --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json
-    #   env:
-    #     NUGET_API_KEY: ${{ steps.nugetapikey.outputs.nugetapikey }}
+    - name: Push
+      run: dotnet nuget push *.nupkg --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json
+      env:
+        NUGET_API_KEY: ${{ steps.nugetapikey.outputs.nugetapikey }}
 
     - name: Create a Release
       uses: softprops/action-gh-release@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-          
