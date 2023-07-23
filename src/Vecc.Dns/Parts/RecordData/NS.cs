@@ -40,7 +40,10 @@
 
         public override bool Write(MemoryStream stream, ILogger logger)
         {
-            Write(stream, (ushort)(Target.Length + 1));
+            var length = 2 //data length
+                + Target.Length;
+
+            Write(stream, (ushort)length);
 
             if (!Target.Write(stream, logger))
             {

@@ -1,10 +1,27 @@
 ﻿using System.Buffers.Binary;
+using System.Text.RegularExpressions;
 
 namespace Vecc.Dns.Parts
 {
     public class Name : PartBase
     {
-        public string? Value { get; set; }
+        private readonly Regex _hostnameRegex = new Regex(@"^([a-zA-Z0-9])([a-zA-Z0-9]|\\|-|\.)*([a-zA-Z0-9])$");
+        private string? _value;
+        public string? Value
+        {
+            get => _value;
+            set
+            {
+                if (!string.IsNullOrEmpty(value))
+                {
+                    if (!_hostnameRegex.IsMatch(value))
+                    {
+                        throw new ArgumentException(@"Value must start with [a-z][0-9], contain only letters, digits, escape character \ or periods and end with [a-z][0-9]", nameof(value)) {  Source = value };
+                    }
+                }
+                _value = value;
+            }
+        }
 
         public override bool Read(MemoryStream stream, ILogger logger)
         {
@@ -104,14 +121,24 @@ namespace Vecc.Dns.Parts
                 return false;
             }
 
+            // convert escaped periods to something that should never be in the value
+
             if (Value != string.Empty)
             {
-                var parts = Value.Split(".");
+                var toWrite = Value.Replace("\\.", "\\\t");
+                var parts = toWrite.Split(".");
                 foreach (var part in parts)
                 {
                     stream.WriteByte((byte)part.Length);
                     foreach (var c in part)
                     {
+                        // if the current char is \t then write out a . and skip this character
+                        if (c == '\t')
+                        {
+                            stream.WriteByte((byte)'.');
+                            continue;
+                        }
+
                         stream.WriteByte((byte)c);
                     }
                 }
@@ -124,5 +151,8 @@ namespace Vecc.Dns.Parts
         }
 
         public override string ToString() => Value ?? "NULL";
+
+        public static implicit operator Name(string? value) => new Name { Value = value };
+        public static implicit operator string?(Name value) => value.Value;
     }
 }

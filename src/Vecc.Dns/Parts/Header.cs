@@ -35,18 +35,20 @@ namespace Vecc.Dns.Parts
 
             PacketType = (PacketType)(packed & 0b10000000);
             OpCode = (OpCodes)((packed & 0b01111000) >> 3);
-            AuthoritativeServer = (packed & 0b00001000) == 0b00001000;
-            Truncated = (packed & 0b00000100) == 0b00000100;
-            RecursionDesired = (packed & 0b00000010) == 0b00000010;
+            AuthoritativeServer = (packed & 0b00000100) == 0b00001000;
+            Truncated = (packed & 0b00000100) == 0b00000010;
+            RecursionDesired = (packed & 0b00000010) == 0b00000001;
 
             packed = buffer[3];
-            RecursionAvailable = (packed & 0b00000001) == 0b00000001;
+            RecursionAvailable = (packed & 0b10000000) == 0b10000000;
 
-            if ((packed & (1 << 6)) != 0)
+            if ((packed & 0b01000000) != 0)
             {
                 logger.LogWarning("Reserved bit is not false in {@class}", nameof(Header));
                 return false;
             }
+
+            Authenticated = (packed & 0b00100000) == 0b00100000;
 
             ResponseCode = (ResponseCodes)(packed & 0b1111);
 
@@ -120,22 +122,22 @@ namespace Vecc.Dns.Parts
             b = (byte)(b | ((int)OpCode << 3));
             if (AuthoritativeServer)
             {
-                b = (byte)(b | 0b00001000);
+                b = (byte)(b | 0b00000100);
             }
             if (Truncated)
             {
-                b = (byte)(b | 0b00000100);
+                b = (byte)(b | 0b00000010);
             }
             if (RecursionDesired)
             {
-                b = (byte)(b | 0b00000010);
+                b = (byte)(b | 0b00000001);
             }
             stream.WriteByte(b);
 
             b = 0;
             if (RecursionAvailable)
             {
-                b = (byte)(b | 0b00000001);
+                b = (byte)(b | 0b10000000);
             }
             if (Authenticated)
             {
