@@ -16,7 +16,7 @@
         {
             if (!TryReadUShort(stream, out var length))
             {
-                logger.LogWarning("Unable to read length in {@class}", nameof(NS));
+                logger.LogWarning("End of stream reached while reading length {@class}", nameof(NS));
                 return false;
             }
 
@@ -26,7 +26,6 @@
                 logger.LogWarning("Unable to read target in {@class}", nameof(NS));
                 return false;
             }
-
 
             if (stream.Position != currentPosition + length)
             {
@@ -40,8 +39,8 @@
 
         public override bool Write(MemoryStream stream, ILogger logger)
         {
-            var length = 2 //data length
-                + Target.Length;
+            var length = 1 +// data length
+                Target.Length;
 
             Write(stream, (ushort)length);
 

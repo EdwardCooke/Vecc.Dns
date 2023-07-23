@@ -95,6 +95,15 @@ namespace Vecc.Dns.Example
                             IPAddress = IPAddress.Parse("216.239.32.10")
                         }
                     });
+                    answers.Add(new ResourceRecord
+                    {
+                        Name = "ns2.google.com",
+                        TTL = 0,
+                        Data = new AAAA
+                        {
+                            IPAddress = IPAddress.Parse("2001:4860:4802:32::a")
+                        }
+                    });
                 }
             }
 

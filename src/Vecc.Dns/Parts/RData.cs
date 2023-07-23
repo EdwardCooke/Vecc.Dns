@@ -17,6 +17,7 @@ namespace Vecc.Dns.Parts
             _rdataTypes = new Dictionary<ushort, Dictionary<ushort, Func<RData>>>();
 
             AddRDataType(() => new A());
+            AddRDataType(() => new AAAA());
             AddRDataType(() => new CName());
             AddRDataType(() => new NS());
             AddRDataType(() => new Ptr());
