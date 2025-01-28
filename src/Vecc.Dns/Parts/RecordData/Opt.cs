@@ -13,7 +13,14 @@
         public ushort RequestorsPayloadSize { get; set; }
 
         public ushort RCode { get; set; }
+
+        public ushort Version { get; set; }
+
         public byte[] RData { get; set; } = Array.Empty<byte>();
+
+        public bool DNSSecSupported { get; set; }
+
+        public ushort Z { get; set; }
 
         public override bool Read(MemoryStream stream, ILogger logger)
         {
@@ -24,12 +31,17 @@
             }
             RequestorsPayloadSize = value;
 
-            if (!TryReadUShort(stream, out value))
+            if (!TryReadUInt(stream, out var ttlField))
             {
-                logger.LogWarning("Unable to read RCode in {@class}", nameof(Opt));
+                logger.LogWarning("Unable to read TTL Field in {@class}", nameof(Opt));
                 return false;
             }
-            RCode = value;
+
+            RCode =   (ushort)((ttlField & 0xFF000000) >> 24);
+            Version = (ushort)((ttlField & 0x00FF0000) >> 16);
+            DNSSecSupported =  (ttlField & 0x00008000) == 0x8000;
+            Z =        (ushort)(ttlField & 0x00007FFF);
+
 
             if (!TryReadUShort(stream, out var length))
             {
@@ -52,7 +64,13 @@
         public override bool Write(MemoryStream stream, ILogger logger)
         {
             Write(stream, RequestorsPayloadSize);
-            Write(stream, RCode);
+
+            var ttlField = (uint)(RCode << 24);
+            ttlField |= (uint)(Version << 16);
+            ttlField |= DNSSecSupported ? (uint)0x8000 : 0;
+            ttlField |= Z;
+
+            Write(stream, ttlField);
             Write(stream, (uint)RData.Length);
             stream.Write(RData, 0, RData.Length);
 
