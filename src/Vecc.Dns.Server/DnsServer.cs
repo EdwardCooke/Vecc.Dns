@@ -25,30 +25,48 @@ namespace Vecc.Dns.Server
         public virtual async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Starting servers");
-            var udpTask = Task.Run(async () => await ListenUDPAsync(cancellationToken));
-            //var tcpTask = Task.Run(ListenTCPAsync);
-            //var tcpClient = new TcpClient(new IPEndPoint(_options.ListenTCPAddress, _options.ListenTCPPort));
-            await Task.WhenAll(udpTask);
+            await ListenUDPAsync(cancellationToken);
         }
 
-        public virtual async Task ProcessPacketAsync(UdpReceiveResult udpPacket, UdpClient udpClient) =>
-            await ProcessPacketAsync(udpPacket.Buffer, async (buffer) => await udpClient.SendAsync(buffer, buffer.Length, udpPacket.RemoteEndPoint));
+        public virtual async Task ProcessPacketAsync(UdpReceiveResult udpPacket, Socket udpClient) =>
+            await ProcessPacketAsync(udpPacket.Buffer, async (buffer) => await udpClient.SendToAsync(buffer, udpPacket.RemoteEndPoint));
 
         protected virtual async Task ListenUDPAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Starting UDP server on {udpaddress}:{udpport}", _options.ListenUDPAddress, _options.ListenUDPPort);
-            var client = new UdpClient(new IPEndPoint(_options.ListenUDPAddress, _options.ListenUDPPort));
+            using var socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+            socket.Bind(new IPEndPoint(_options.ListenUDPAddress, _options.ListenUDPPort));
+            var bufferArray = GC.AllocateArray<byte>(length: 65527, pinned: true);
+            var buffer = bufferArray.AsMemory();
+            var ipaddressFactory = new IPEndPoint(IPAddress.Any, 53);
+            var receivedAddress = new SocketAddress(socket.AddressFamily);
+
             try
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     try
                     {
-                        var packet = await client.ReceiveAsync(cancellationToken);
+                        var receivedCount = await socket.ReceiveFromAsync(buffer, SocketFlags.None, receivedAddress);
+                        var receivedBytes = new byte[receivedCount];
+                        Array.Copy(buffer.ToArray(), receivedBytes, receivedCount);
+                        var endpoint = ipaddressFactory.Create(receivedAddress);
+                        var packet = new UdpReceiveResult(receivedBytes, (IPEndPoint)endpoint);
 
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                        Task.Run(async () => await ProcessPacketAsync(packet, client), cancellationToken);
+                        Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await ProcessPacketAsync(packet, socket);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Error processing packet");
+                            }
+                        }, cancellationToken);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+
                     }
                     catch (OperationCanceledException)
                     {
