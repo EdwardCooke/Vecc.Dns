@@ -11,12 +11,22 @@ namespace Vecc.Dns.Example
             _logger = logger;
         }
 
-        public void LogError(string message, params object[] values)
+        public IDisposable? CreateScope(string message, params object?[] values)
+        {
+            return _logger.BeginScope(message, values);
+        }
+
+        public void LogDebug(string message, params object?[] values)
+        {
+            _logger.LogDebug(message, values);
+        }
+
+        public void LogError(string message, params object?[] values)
         {
             _logger.LogError(message, values);
         }
 
-        public void LogError(Exception ex, string message, params object[] values)
+        public void LogError(Exception ex, string message, params object?[] values)
         {
             _logger.LogError(ex, message, values);
         }
@@ -26,12 +36,12 @@ namespace Vecc.Dns.Example
             _logger.LogCritical(ex, message, values);
         }
 
-        public void LogInformation(string message, params object[] values)
+        public void LogInformation(string message, params object?[] values)
         {
             _logger.LogInformation(message, values);
         }
 
-        public void LogVerbose(string message, params object[] values)
+        public void LogVerbose(string message, params object?[] values)
         {
             _logger.LogTrace(message, values);
         }
