@@ -1,11 +1,6 @@
 ﻿//#define TestPacket
-using System.Buffers.Binary;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
-using Vecc.Dns.Parts;
-using Vecc.Dns.Parts.RecordData;
 
 namespace Vecc.Dns.Server
 {
@@ -35,10 +30,19 @@ namespace Vecc.Dns.Server
         {
             _logger.LogInformation("Starting UDP server on {udpaddress}:{udpport}", _options.ListenUDPAddress, _options.ListenUDPPort);
             using var socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+
+            _logger.LogInformation("Binding to UDP:{@address} {@port}", _options.ListenUDPAddress, _options.ListenUDPPort);
             socket.Bind(new IPEndPoint(_options.ListenUDPAddress, _options.ListenUDPPort));
+            _logger.LogInformation("Bound to UDP port");
+
+            _logger.LogVerbose("Allocating UDP receive buffer");
             var bufferArray = GC.AllocateArray<byte>(length: 65527, pinned: true);
             var buffer = bufferArray.AsMemory();
+
+            _logger.LogVerbose("Creating UDP IP Address factory");
             var ipaddressFactory = new IPEndPoint(IPAddress.Any, 53);
+
+            _logger.LogVerbose("Creating UDP SocketAddress");
             var receivedAddress = new SocketAddress(socket.AddressFamily);
 
             try
@@ -47,26 +51,40 @@ namespace Vecc.Dns.Server
                 {
                     try
                     {
-                        var receivedCount = await socket.ReceiveFromAsync(buffer, SocketFlags.None, receivedAddress);
+                        using var scope = _logger.CreateScope("PacketId:{@packetId}", Guid.NewGuid().ToString());
+
+                        _logger.LogDebug("Waiting for UDP DNS packet");
+                        var receivedCount = await socket.ReceiveFromAsync(buffer, SocketFlags.None, receivedAddress, cancellationToken);
+                        _logger.LogDebug("Packet received: Length={length}", receivedCount);
+
                         var receivedBytes = new byte[receivedCount];
+                        _logger.LogVerbose("Created array");
+
                         Array.Copy(buffer.ToArray(), receivedBytes, receivedCount);
+                        _logger.LogVerbose("Copied packet bytes");
+
                         var endpoint = ipaddressFactory.Create(receivedAddress);
+                        _logger.LogVerbose("Created endpoint");
+
                         var packet = new UdpReceiveResult(receivedBytes, (IPEndPoint)endpoint);
+                        _logger.LogVerbose("Created receive result");
 
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                         Task.Run(async () =>
                         {
                             try
                             {
+                                _logger.LogDebug("Processing packet");
                                 await ProcessPacketAsync(packet, socket);
+                                _logger.LogDebug("Packet processed");
                             }
                             catch (Exception ex)
                             {
                                 _logger.LogError(ex, "Error processing packet");
                             }
-                        }, cancellationToken);
+                        }, cancellationToken).ConfigureAwait(false);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-
+                        _logger.LogVerbose("Task queued");
                     }
                     catch (OperationCanceledException)
                     {
